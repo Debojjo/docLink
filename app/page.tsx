@@ -1,10 +1,17 @@
 import { PatientForm } from "@/components/forms/PatientForm";
+import PassKeyModel from "@/components/PassKeyModel";
 import Image from "next/image";
 import Link from "next/link";
 
-export default function Home() {
+export default async function Home({ searchParams }: SearchParamProps) {
+
+  const { admin } = await searchParams;
+
+  const isAdmin = admin === "true";
+
   return (
     <div className="flex min-h-screen">
+      {isAdmin && <PassKeyModel />}
       <section className="remove-scrollbar container my-auto">
         <div className="sub-container max-w-[496px]">
           <Image

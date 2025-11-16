@@ -12,40 +12,51 @@ import "react-phone-number-input/style.css";
 import CustomFormField, { FormFieldType } from "../CustomFormField";
 import SubmitButton from "../SubmitButton";
 import { getAppointmentSchema } from "@/lib/validation";
-import {
-  Doctors,
-} from "@/constants";
+import { Doctors } from "@/constants";
 import { SelectItem } from "../ui/select";
 import Image from "next/image";
-import { createAppointment } from "@/lib/actions/appointment.actions";
+import {
+  createAppointment,
+  updateAppointment,
+} from "@/lib/actions/appointment.actions";
+import { Appointment } from "@/types/appwrite.types";
 
-
-const AppointmentForm = ({ userId, patientId, type}: {
-    userId:string;
-    patientId:string;
-    type: "create" | "cancel" | "schedule";
-}) =>  {
+const AppointmentForm = ({
+  userId,
+  patientId,
+  type,
+  appointment,
+  setOpen,
+}: {
+  userId: string;
+  patientId: string;
+  type: "create" | "cancel" | "schedule";
+  appointment?: Appointment;
+  setOpen: (open: boolean) => void;
+}) => {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const AppointmentFormValidation = getAppointmentSchema(type);
 
-  const form = useForm<z.infer<typeof AppointmentFormValidation>>({
-    resolver: zodResolver(AppointmentFormValidation),
-    defaultValues: {
-      primaryPhysician: "",
-      schedule: new Date(),
-      reason: "",
-      note: "",
-      cancellationReason: "",
-    },
-  });
+const form = useForm<z.infer<typeof AppointmentFormValidation>>({
+  resolver: zodResolver(AppointmentFormValidation),
+  defaultValues: {
+    primaryPhysician: appointment?.primaryPhysician ?? "",
+    schedule: appointment?.schedule 
+      ? new Date(appointment.schedule) 
+      : new Date(),
+    reason: appointment?.reason ?? "",
+    note: appointment?.note ?? "",                       
+    cancellationReason: appointment?.cancellationReason ?? "", 
+  },
+});
 
   const onSubmit = async (
     values: z.infer<typeof AppointmentFormValidation>
   ) => {
     setIsLoading(true);
 
-    let status;
+    let status: Status;
     switch (type) {
       case "schedule":
         status = "scheduled";
@@ -61,11 +72,11 @@ const AppointmentForm = ({ userId, patientId, type}: {
       if (type === "create" && patientId) {
         const appointmentData = {
           userId,
-          patient:patientId,
+          patient: patientId,
           primaryPhysician: values.primaryPhysician,
           schedule: new Date(values.schedule),
           reason: values.reason!,
-          status: status as Status,
+          status,
           note: values.note,
         };
 
@@ -77,15 +88,44 @@ const AppointmentForm = ({ userId, patientId, type}: {
             `/patients/${userId}/new-appointment/success?appointmentId=${newAppointment.$id}`
           );
         }
+
+        setIsLoading(false);
+        return;
+      }
+
+      if (!appointment) {
+        console.error("Cannot update appointment: appointment is undefined");
+        setIsLoading(false);
+        return;
+      }
+
+      const appointmentToUpdate = {
+        userId,
+        appointmentId: appointment.$id, 
+        appointment: {
+          primaryPhysician: values.primaryPhysician,
+          schedule: new Date(values.schedule),
+          status,
+          cancellationReason: values.cancellationReason,
+        },
+        type,
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      };
+
+      const updatedAppointment = await updateAppointment(appointmentToUpdate);
+
+      if(updatedAppointment){
+        if (setOpen) setOpen(false);
+        form.reset();
       }
     } catch (error) {
       console.log(error);
     }
+
     setIsLoading(false);
   };
 
-
-let buttonLabel;
+  let buttonLabel;
   switch (type) {
     case "cancel":
       buttonLabel = "Cancel Appointment";
@@ -97,16 +137,13 @@ let buttonLabel;
       buttonLabel = "Submit Apppointment";
   }
 
-
   return (
-     <Form {...form}>
+    <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 space-y-6">
         {type === "create" && (
           <section className="mb-12 space-y-4">
             <h1 className="header">New Appointment</h1>
-            <p className="text-dark-700">
-              Request a new appointment.
-            </p>
+            <p className="text-dark-700">Request a new appointment.</p>
           </section>
         )}
 
@@ -145,7 +182,9 @@ let buttonLabel;
             />
 
             <div
-              className={`flex flex-col gap-6  ${type === "create" && "xl:flex-row"}`}
+              className={`flex flex-col gap-6  ${
+                type === "create" && "xl:flex-row"
+              }`}
             >
               <CustomFormField
                 fieldType={FormFieldType.TEXTAREA}
@@ -178,7 +217,9 @@ let buttonLabel;
 
         <SubmitButton
           isLoading={isLoading}
-          className={`${type === "cancel" ? "shad-danger-btn" : "shad-primary-btn"} w-full`}
+          className={`${
+            type === "cancel" ? "shad-danger-btn" : "shad-primary-btn"
+          } w-full`}
         >
           {buttonLabel}
         </SubmitButton>
@@ -187,5 +228,4 @@ let buttonLabel;
   );
 };
 
-
-export default AppointmentForm
+export default AppointmentForm;

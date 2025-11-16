@@ -1,34 +1,109 @@
-'use server';
+"use server";
 
-import { ID } from "node-appwrite";
-import { APPOINTMENT_COLLECTION_ID, DATABASE_ID, databases } from "../appwrite.config";
+import { ID, Query } from "node-appwrite";
+import {
+  APPOINTMENT_COLLECTION_ID,
+  DATABASE_ID,
+  databases,
+} from "../appwrite.config";
 import { parseStringify } from "../utils";
+import { Appointment } from "@/types/appwrite.types";
+import { revalidatePath } from "next/cache";
 
-export const createAppointment = async ( appointment: CreateAppointmentParams)=> {
-    try {
-        const newAppointment = await databases.createDocument({
-              databaseId: DATABASE_ID!,
-              collectionId: APPOINTMENT_COLLECTION_ID!,
-              documentId: ID.unique(),
-              data: {
-                ...appointment,
-              },
-            });
-            return parseStringify(newAppointment);
-    } catch (error) {
-        console.log(error);
-    }
-}
-
+export const createAppointment = async (
+  appointment: CreateAppointmentParams
+) => {
+  try {
+    const newAppointment = await databases.createDocument({
+      databaseId: DATABASE_ID!,
+      collectionId: APPOINTMENT_COLLECTION_ID!,
+      documentId: ID.unique(),
+      data: {
+        ...appointment,
+      },
+    });
+    return parseStringify(newAppointment);
+  } catch (error) {
+    console.log(error);
+  }
+};
 
 export const getAppointment = async (appointmentId: string) => {
+  try {
+    const appointment = await databases.getDocument({
+      databaseId: DATABASE_ID!,
+      collectionId: APPOINTMENT_COLLECTION_ID!,
+      documentId: appointmentId,
+    });
+    return parseStringify(appointment);
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+export const getRecentAppointmentList = async () => {
+  try {
+    const appointments = await databases.listDocuments(
+      DATABASE_ID!,
+      APPOINTMENT_COLLECTION_ID!,
+      [Query.orderDesc("$createdAt")]
+    );
+
+    const initialCounts = {
+      scheduledCounts: 0,
+      pendingCount: 0,
+      cancelledCount: 0,
+    };
+
+    const counts = (appointments.documents as unknown as Appointment[]).reduce(
+      (acc, appointment) => {
+        switch (appointment.status) {
+          case "scheduled":
+            acc.scheduledCounts++;
+            break;
+          case "pending":
+            acc.pendingCount++;
+            break;
+          case "cancelled":
+            acc.cancelledCount++;
+            break;
+        }
+        return acc;
+      },
+      initialCounts
+    );
+    const data ={
+        totalCount: appointments.total,
+        ...counts,
+        documents: appointments.documents
+    };
+
+    return parseStringify(data);
+  } catch (error) {
+    console.log(error);
+    return {
+      scheduledCounts: 0,
+      pendingCount: 0,
+      cancelledCount: 0,
+    };
+  }
+};
+
+export const updateAppointment = async ({ appointmentId, userId, appointment, type}: UpdateAppointmentParams) => {
     try {
-        const appointment = await databases.getDocument({
-            databaseId: DATABASE_ID!,
-            collectionId: APPOINTMENT_COLLECTION_ID!,
-            documentId: appointmentId,
-        })
-        return parseStringify(appointment);
+        const updatedAppointment = await databases.updateDocument(
+            DATABASE_ID!,
+            APPOINTMENT_COLLECTION_ID!,
+            appointmentId,
+            appointment
+        )
+        if(!updatedAppointment){
+            throw new Error('Appointment not found!');
+        }
+        //sms notif
+
+        revalidatePath('/admin');
+        return parseStringify(updatedAppointment);
     } catch (error) {
         console.log(error);
     }
