@@ -21,19 +21,19 @@ const RequestSuccess = async ({ params, searchParams }: SearchParamProps) => {
       <div className="success-img">
         <Link href="/">
           <Image
-            src="/assets/icons/logo.svg"
+            src="/assets/images/logo.png"
             height={1000}
             width={1000}
             alt="logo"
-            className="h-30 w-fit"
+            className="h-50 w-fit"
           />
         </Link>
 
         <section className="flex flex-col items-center">
           <Image
             src="/assets/gifs/success.gif"
-            height={300}
-            width={280}
+            height={150}
+            width={150}
             alt="success"
           />
           <h2 className="header mb-6 max-w-[600px] text-center">

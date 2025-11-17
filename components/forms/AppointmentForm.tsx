@@ -143,7 +143,7 @@ const form = useForm<z.infer<typeof AppointmentFormValidation>>({
         {type === "create" && (
           <section className="mb-12 space-y-4">
             <h1 className="header">New Appointment</h1>
-            <p className="text-dark-700">Request a new appointment.</p>
+            <p className="text-green-500">Request a new appointment.</p>
           </section>
         )}
 
@@ -191,7 +191,7 @@ const form = useForm<z.infer<typeof AppointmentFormValidation>>({
                 control={form.control}
                 name="reason"
                 label="Appointment reason"
-                placeholder="Reason for appointment"
+                placeholder="Purpose of Visit"
               />
 
               <CustomFormField
@@ -199,7 +199,7 @@ const form = useForm<z.infer<typeof AppointmentFormValidation>>({
                 control={form.control}
                 name="note"
                 label="Comments/notes"
-                placeholder="Any notes"
+                placeholder="Additional notes"
               />
             </div>
           </>

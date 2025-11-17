@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   title: "DocLink",
   description: "Connect instantly with your doctor",
   icons: {
-    icon: "/assets/images/logo.png",
+    icon: "/assets/images/logo-app.png",
   },
 };
 

@@ -15,11 +15,11 @@ export default async function Home({ searchParams }: SearchParamProps) {
       <section className="remove-scrollbar container my-auto">
         <div className="sub-container max-w-[496px]">
           <Image
-            src="/assets/icons/logo.svg"
+            src="/assets/images/logo.png"
             height={1000}
-            width={1000}
+            width={1200}
             alt="patient"
-            className="mb-1 h-30 w-fit"
+            className="mb-0 h-50 w-fit"
           />
 
           <PatientForm />
